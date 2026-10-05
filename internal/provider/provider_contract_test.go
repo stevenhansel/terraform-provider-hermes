@@ -9,8 +9,10 @@ import (
 	frameworkproviderschema "github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	frameworkresourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/cron"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/mcp"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/messaging"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 )
 
@@ -24,14 +26,16 @@ func TestProviderMetadataAndResources(t *testing.T) {
 	}
 
 	resources := instance.Resources(context.Background())
-	if len(resources) != 4 {
-		t.Fatalf("registered resource count = %d, want model assignment, profile, custom provider, and MCP", len(resources))
+	if len(resources) != 6 {
+		t.Fatalf("registered resource count = %d, want model assignment, profile, custom provider, MCP, messaging, and cron", len(resources))
 	}
 	wantResources := map[string]bool{
-		"hermes_model_assignment": false,
-		"hermes_profile":          false,
-		"hermes_mcp_server":       false,
-		"hermes_custom_provider":  false,
+		"hermes_model_assignment":   false,
+		"hermes_profile":            false,
+		"hermes_mcp_server":         false,
+		"hermes_messaging_platform": false,
+		"hermes_cron_job":           false,
+		"hermes_custom_provider":    false,
 	}
 	for _, factory := range resources {
 		var resourceMetadata frameworkresource.MetadataResponse
@@ -76,6 +80,8 @@ func TestMCPAndCronSchemaContracts(t *testing.T) {
 		instance frameworkresource.Resource
 	}{
 		{name: "MCP server", instance: mcp.NewResource()},
+		{name: "messaging platform", instance: messaging.NewResource()},
+		{name: "cron job", instance: cron.NewResource()},
 		{name: "custom provider", instance: custom.NewResource()},
 	} {
 		t.Run(test.name, func(t *testing.T) {

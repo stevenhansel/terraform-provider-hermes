@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -71,4 +72,98 @@ func TestClientManagesMCPServer(t *testing.T) {
 	if err := client.DeleteMCPServer(context.Background(), "assistant", "docs"); err != nil {
 		t.Fatalf("DeleteMCPServer: %v", err)
 	}
+}
+
+func TestClientManagesCronJob(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/auth/password-login" && request.URL.Query().Get("profile") != "assistant" {
+			t.Errorf("profile query = %q, want assistant", request.URL.Query().Get("profile"))
+		}
+		switch {
+		case request.URL.Path == "/auth/password-login":
+			response.WriteHeader(http.StatusOK)
+		case request.Method == http.MethodPost && request.URL.Path == "/api/cron/jobs":
+			var body CronJobRequest
+			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+				t.Errorf("decode cron create request: %v", err)
+			}
+			wantSkills := []string{"morning-brief"}
+			if body.Schedule != "every 1h" || body.Prompt != "Check my tasks" || !reflect.DeepEqual(body.Skills, wantSkills) || body.Provider != "custom" {
+				t.Errorf("cron create request = %#v", body)
+			}
+			writeCronJob(response, false)
+		case request.Method == http.MethodGet && request.URL.Path == "/api/cron/jobs/job123":
+			writeCronJob(response, false)
+		case request.Method == http.MethodPut && request.URL.Path == "/api/cron/jobs/job123":
+			var body struct {
+				Updates map[string]any `json:"updates"`
+			}
+			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+				t.Errorf("decode cron update request: %v", err)
+			}
+			if body.Updates["prompt"] != "Updated prompt" {
+				t.Errorf("cron updates = %#v, want updated prompt", body.Updates)
+			}
+			writeCronJob(response, false)
+		case request.Method == http.MethodPost && request.URL.Path == "/api/cron/jobs/job123/pause":
+			writeCronJob(response, true)
+		case request.Method == http.MethodPost && request.URL.Path == "/api/cron/jobs/job123/resume":
+			writeCronJob(response, false)
+		case request.Method == http.MethodDelete && request.URL.Path == "/api/cron/jobs/job123":
+			response.WriteHeader(http.StatusOK)
+		default:
+			response.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, "iac", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := client.CreateCronJob(context.Background(), "assistant", CronJobRequest{
+		Prompt: "Check my tasks", Schedule: "every 1h", Skills: []string{"morning-brief"}, Provider: "custom",
+	})
+	if err != nil {
+		t.Fatalf("CreateCronJob: %v", err)
+	}
+	if created.ID != "job123" || created.ScheduleText() != "every 1h" || created.DeliverText() != "local" {
+		t.Fatalf("created cron job = %#v", created)
+	}
+	if _, err := client.GetCronJob(context.Background(), "assistant", "job123"); err != nil {
+		t.Fatalf("GetCronJob: %v", err)
+	}
+	if _, err := client.UpdateCronJob(context.Background(), "assistant", "job123", map[string]any{"prompt": "Updated prompt"}); err != nil {
+		t.Fatalf("UpdateCronJob: %v", err)
+	}
+	paused, err := client.PauseCronJob(context.Background(), "assistant", "job123")
+	if err != nil {
+		t.Fatalf("PauseCronJob: %v", err)
+	}
+	if !paused.IsPaused() {
+		t.Fatalf("paused job = %#v, want paused", paused)
+	}
+	if _, err := client.ResumeCronJob(context.Background(), "assistant", "job123"); err != nil {
+		t.Fatalf("ResumeCronJob: %v", err)
+	}
+	if err := client.DeleteCronJob(context.Background(), "assistant", "job123"); err != nil {
+		t.Fatalf("DeleteCronJob: %v", err)
+	}
+}
+
+func writeCronJob(response http.ResponseWriter, paused bool) {
+	response.Header().Set("Content-Type", "application/json")
+	state := "scheduled"
+	enabled := true
+	if paused {
+		state = "paused"
+		enabled = false
+	}
+	job := map[string]any{
+		"id": "job123", "profile": "assistant", "name": "Task check", "prompt": "Check my tasks",
+		"schedule": map[string]string{"display": "every 1h"}, "schedule_display": "every 1h",
+		"deliver": "local", "skills": []string{"morning-brief"}, "provider": "custom",
+		"enabled": enabled, "state": state, "next_run_at": "2026-09-12T10:00:00Z",
+	}
+	_ = json.NewEncoder(response).Encode(job)
 }

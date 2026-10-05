@@ -12,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/cron"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/mcp"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/messaging"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/modeloptions"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/profile"
@@ -87,6 +89,8 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		model.NewAssignmentResource,
 		profile.NewResource,
 		mcp.NewResource,
+		messaging.NewResource,
+		cron.NewResource,
 		custom.NewResource,
 	}
 }
