@@ -5,6 +5,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      terraform-plugin-libraries:
+        patterns:
+          - "github.com/hashicorp/terraform-plugin-*"
 
   - package-ecosystem: github-actions
     directory: /.github/workflows
