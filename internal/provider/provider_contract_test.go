@@ -10,6 +10,7 @@ import (
 	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	frameworkresourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/mcp"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 )
 
@@ -23,11 +24,13 @@ func TestProviderMetadataAndResources(t *testing.T) {
 	}
 
 	resources := instance.Resources(context.Background())
-	if len(resources) != 2 {
-		t.Fatalf("registered resource count = %d, want model assignment and custom provider", len(resources))
+	if len(resources) != 4 {
+		t.Fatalf("registered resource count = %d, want model assignment, profile, custom provider, and MCP", len(resources))
 	}
 	wantResources := map[string]bool{
 		"hermes_model_assignment": false,
+		"hermes_profile":          false,
+		"hermes_mcp_server":       false,
 		"hermes_custom_provider":  false,
 	}
 	for _, factory := range resources {
@@ -72,6 +75,7 @@ func TestMCPAndCronSchemaContracts(t *testing.T) {
 		name     string
 		instance frameworkresource.Resource
 	}{
+		{name: "MCP server", instance: mcp.NewResource()},
 		{name: "custom provider", instance: custom.NewResource()},
 	} {
 		t.Run(test.name, func(t *testing.T) {

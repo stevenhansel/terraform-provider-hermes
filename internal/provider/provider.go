@@ -13,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/mcp"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/modeloptions"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/profile"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/status"
 )
 
@@ -83,6 +85,8 @@ func (p *Provider) Configure(ctx context.Context, request provider.ConfigureRequ
 func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		model.NewAssignmentResource,
+		profile.NewResource,
+		mcp.NewResource,
 		custom.NewResource,
 	}
 }
