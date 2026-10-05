@@ -82,3 +82,37 @@ func TestClientSetModelReportsConfirmationRequired(t *testing.T) {
 		t.Fatalf("SetModel error text = %q", got)
 	}
 }
+
+// The config endpoint flattens the main model and drops its provider. Reading
+// it alone caused every Codex refresh to propose switching custom back to Codex.
+func TestGetConfigRetainsFlattenedModelProvider(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/auth/password-login" && r.URL.Query().Get("profile") != "personal" {
+			t.Errorf("profile = %q, want personal", r.URL.Query().Get("profile"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/auth/password-login":
+			_, _ = w.Write([]byte(`{}`))
+		case "/api/config":
+			_, _ = w.Write([]byte(`{"model":"coding-model"}`))
+		case "/api/model/info":
+			_, _ = w.Write([]byte(`{"model":"coding-model","provider":"openai-codex"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	client, err := NewClient(server.URL, "iac", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := client.GetConfig(context.Background(), "personal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assignment, found := config.FindModelAssignment("main", "")
+	if !found || assignment.Provider != "openai-codex" || assignment.Model != "coding-model" {
+		t.Fatalf("assignment = %#v, found = %v", assignment, found)
+	}
+}
