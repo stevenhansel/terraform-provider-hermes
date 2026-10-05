@@ -1,0 +1,17 @@
+---
+page_title: "{{.ProviderShortName}} Provider"
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# Hermes provider
+
+The Hermes provider manages durable Hermes dashboard configuration through its authenticated management API.
+
+## Example usage
+
+{{tffile "examples/example_1.tf"}}
+
+The provider accepts `HERMES_DASHBOARD_URL`, `HERMES_DASHBOARD_USERNAME`, and `HERMES_DASHBOARD_PASSWORD` environment variables. Prefer environment variables or an external secret manager for machine credentials.
+
+{{ .SchemaMarkdown | trimspace }}

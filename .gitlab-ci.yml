@@ -1,0 +1,12 @@
+stages:
+  - test
+
+go-quality:
+  image: golang:1.26
+  stage: test
+  script:
+    - make fmt-check
+    - make test
+    - make vet
+    - make build
+    - make docs-check
