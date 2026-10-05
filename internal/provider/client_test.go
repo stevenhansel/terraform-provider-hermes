@@ -130,6 +130,8 @@ func TestClientRetriesExpiredSession(t *testing.T) {
 			}
 			response.Header().Set("Content-Type", "application/json")
 			_, _ = response.Write([]byte(`{"model":"local-model"}`))
+		case "/api/model/info":
+			_, _ = response.Write([]byte(`{"model":"local-model","provider":"custom"}`))
 		default:
 			response.WriteHeader(http.StatusNotFound)
 		}

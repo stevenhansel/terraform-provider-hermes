@@ -12,6 +12,8 @@ import (
 // DashboardConfig is the subset of Hermes configuration needed to discover
 // model assignments. Unknown configuration fields are intentionally ignored.
 type DashboardConfig struct {
+	// The dashboard flattens model to a string; model/info retains its provider.
+	MainProvider    string                 `json:"-"`
 	Model           ModelConfig            `json:"model"`
 	Auxiliary       AuxiliaryConfig        `json:"auxiliary"`
 	CustomProviders []CustomProviderConfig `json:"custom_providers"`
@@ -144,6 +146,19 @@ func (c *Client) GetConfig(ctx context.Context, profile string) (DashboardConfig
 	if err := c.requestJSON(ctx, http.MethodGet, "/api/config", profileQuery(profile), nil, &config); err != nil {
 		return DashboardConfig{}, err
 	}
+	if config.Model.Raw != nil && strings.TrimSpace(*config.Model.Raw) != "" {
+		var info struct {
+			Model    string `json:"model"`
+			Provider string `json:"provider"`
+		}
+		if err := c.requestJSON(ctx, http.MethodGet, "/api/model/info", profileQuery(profile), nil, &info); err != nil {
+			return DashboardConfig{}, fmt.Errorf("read flattened model provider: %w", err)
+		}
+		if strings.TrimSpace(info.Model) != strings.TrimSpace(*config.Model.Raw) || strings.TrimSpace(info.Provider) == "" {
+			return DashboardConfig{}, fmt.Errorf("model configuration and model info disagree; retry after the model selection settles")
+		}
+		config.MainProvider = strings.TrimSpace(info.Provider)
+	}
 	return config, nil
 }
 
@@ -205,9 +220,13 @@ func (c DashboardConfig) mainModelAssignment() (ModelAssignmentState, bool) {
 			return ModelAssignmentState{}, false
 		}
 		baseURL, baseURLKnown := c.customModelDetails(model)
+		provider := c.MainProvider
+		if provider == "" {
+			provider = "custom"
+		}
 		return ModelAssignmentState{
 			Scope:        "main",
-			Provider:     "custom",
+			Provider:     provider,
 			Model:        model,
 			BaseURL:      baseURL,
 			BaseURLKnown: baseURLKnown,
