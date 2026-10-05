@@ -8,6 +8,9 @@ import (
 	frameworkprovider "github.com/hashicorp/terraform-plugin-framework/provider"
 	frameworkproviderschema "github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	frameworkresourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 )
 
 func TestProviderMetadataAndResources(t *testing.T) {
@@ -20,10 +23,13 @@ func TestProviderMetadataAndResources(t *testing.T) {
 	}
 
 	resources := instance.Resources(context.Background())
-	if len(resources) != 0 {
-		t.Fatalf("registered resource count = %d, want none", len(resources))
+	if len(resources) != 2 {
+		t.Fatalf("registered resource count = %d, want model assignment and custom provider", len(resources))
 	}
-	wantResources := map[string]bool{}
+	wantResources := map[string]bool{
+		"hermes_model_assignment": false,
+		"hermes_custom_provider":  false,
+	}
 	for _, factory := range resources {
 		var resourceMetadata frameworkresource.MetadataResponse
 		factory().Metadata(context.Background(), frameworkresource.MetadataRequest{}, &resourceMetadata)
@@ -39,10 +45,13 @@ func TestProviderMetadataAndResources(t *testing.T) {
 	}
 
 	dataSources := instance.DataSources(context.Background())
-	if len(dataSources) != 0 {
-		t.Fatalf("registered data source count = %d, want none", len(dataSources))
+	if len(dataSources) != 2 {
+		t.Fatalf("registered data source count = %d, want hermes_status and hermes_model_options", len(dataSources))
 	}
-	wantDataSources := map[string]bool{}
+	wantDataSources := map[string]bool{
+		"hermes_status":        false,
+		"hermes_model_options": false,
+	}
 	for _, factory := range dataSources {
 		var dataSourceMetadata frameworkdatasource.MetadataResponse
 		factory().Metadata(context.Background(), frameworkdatasource.MetadataRequest{}, &dataSourceMetadata)
@@ -55,6 +64,24 @@ func TestProviderMetadataAndResources(t *testing.T) {
 		if !found {
 			t.Fatalf("data source type %q was not registered", name)
 		}
+	}
+}
+
+func TestMCPAndCronSchemaContracts(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		instance frameworkresource.Resource
+	}{
+		{name: "custom provider", instance: custom.NewResource()},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var response frameworkresource.SchemaResponse
+			test.instance.Schema(context.Background(), frameworkresource.SchemaRequest{}, &response)
+			if response.Diagnostics.HasError() {
+				t.Fatalf("schema diagnostics: %v", response.Diagnostics)
+			}
+			assertNoDiagnostics(t, response.Schema.ValidateImplementation(context.Background()))
+		})
 	}
 }
 
@@ -71,6 +98,32 @@ func TestProviderSchemaContract(t *testing.T) {
 	}
 	if _, ok := providerSchemaValue.Attributes["endpoint"]; !ok {
 		t.Fatal("provider schema is missing endpoint")
+	}
+}
+
+func TestModelAssignmentSchemaContract(t *testing.T) {
+	instance := model.NewAssignmentResource()
+	var response frameworkresource.SchemaResponse
+	instance.Schema(context.Background(), frameworkresource.SchemaRequest{}, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("resource schema diagnostics: %v", response.Diagnostics)
+	}
+	assertNoDiagnostics(t, response.Schema.ValidateImplementation(context.Background()))
+
+	attributes := response.Schema.Attributes
+	for _, name := range []string{"id", "scope", "task", "model_provider", "model", "base_url", "api_key", "confirm_expensive_model", "profile"} {
+		if _, ok := attributes[name]; !ok {
+			t.Fatalf("resource schema is missing %q", name)
+		}
+	}
+
+	modelProvider, ok := attributes["model_provider"].(frameworkresourceschema.StringAttribute)
+	if !ok || !modelProvider.Required {
+		t.Fatalf("model_provider schema = %#v, want required string", attributes["model_provider"])
+	}
+	apiKey, ok := attributes["api_key"].(frameworkresourceschema.StringAttribute)
+	if !ok || !apiKey.Sensitive {
+		t.Fatalf("api_key schema = %#v, want sensitive string", attributes["api_key"])
 	}
 }
 

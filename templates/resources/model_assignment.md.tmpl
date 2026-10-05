@@ -1,0 +1,24 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# `hermes_model_assignment` Resource
+
+Assigns Hermes' main or auxiliary model through the authenticated dashboard REST API.
+
+## Example Usage
+
+{{tffile "examples/resources/model_assignment/example_1.tf"}}
+
+For an auxiliary task:
+
+{{tffile "examples/resources/model_assignment/example_2.tf"}}
+
+Supported scopes are `main` and `auxiliary`. Auxiliary assignments require a task name. `profile` can target a named Hermes profile.
+
+Destroy removes the Terraform/OpenTofu resource from state without changing Hermes, because there is no reliable previous-model value to restore.
+
+{{ .SchemaMarkdown | trimspace }}

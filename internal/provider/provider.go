@@ -12,6 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/custom"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/modeloptions"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/status"
 )
 
 const (
@@ -77,11 +81,17 @@ func (p *Provider) Configure(ctx context.Context, request provider.ConfigureRequ
 }
 
 func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		model.NewAssignmentResource,
+		custom.NewResource,
+	}
 }
 
 func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		status.NewDataSource,
+		modeloptions.NewDataSource,
+	}
 }
 
 func providerSchema() schema.Schema {
