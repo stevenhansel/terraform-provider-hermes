@@ -1,0 +1,21 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# `hermes_plugin` Resource
+
+Manages one Hermes agent-plugin installation and runtime activation state.
+
+## Example Usage
+
+{{tffile "examples/resources/plugin/example_1.tf"}}
+
+Plugin installation may clone and execute third-party code. Prefer Hermes
+catalog entries or reviewed HTTPS/SSH Git sources, pin custom sources to a full
+commit SHA, and keep `force = false` unless caution-level scan findings have
+been reviewed. Dashboard-only plugins remain outside this resource.
+
+{{ .SchemaMarkdown | trimspace }}

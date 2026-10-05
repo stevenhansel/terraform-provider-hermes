@@ -14,6 +14,10 @@ import (
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/mcp"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/messaging"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/plugin"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/skill"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/skillinstallation"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/toolset"
 )
 
 func TestProviderMetadataAndResources(t *testing.T) {
@@ -26,8 +30,8 @@ func TestProviderMetadataAndResources(t *testing.T) {
 	}
 
 	resources := instance.Resources(context.Background())
-	if len(resources) != 6 {
-		t.Fatalf("registered resource count = %d, want model assignment, profile, custom provider, MCP, messaging, and cron", len(resources))
+	if len(resources) != 10 {
+		t.Fatalf("registered resource count = %d, want model assignment, profile, custom provider, MCP, messaging, cron, plugin, skill, skill installation, and toolset", len(resources))
 	}
 	wantResources := map[string]bool{
 		"hermes_model_assignment":   false,
@@ -36,6 +40,10 @@ func TestProviderMetadataAndResources(t *testing.T) {
 		"hermes_messaging_platform": false,
 		"hermes_cron_job":           false,
 		"hermes_custom_provider":    false,
+		"hermes_plugin":             false,
+		"hermes_skill":              false,
+		"hermes_skill_installation": false,
+		"hermes_toolset":            false,
 	}
 	for _, factory := range resources {
 		var resourceMetadata frameworkresource.MetadataResponse
@@ -83,6 +91,10 @@ func TestMCPAndCronSchemaContracts(t *testing.T) {
 		{name: "messaging platform", instance: messaging.NewResource()},
 		{name: "cron job", instance: cron.NewResource()},
 		{name: "custom provider", instance: custom.NewResource()},
+		{name: "skill", instance: skill.NewResource()},
+		{name: "skill installation", instance: skillinstallation.NewResource()},
+		{name: "toolset", instance: toolset.NewResource()},
+		{name: "plugin", instance: plugin.NewResource()},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var response frameworkresource.SchemaResponse

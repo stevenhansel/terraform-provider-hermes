@@ -1,0 +1,21 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# `hermes_skill_installation` Resource
+
+Manages a skill-hub installation through Hermes' security-scanned background
+action API.
+
+## Example Usage
+
+{{tffile "examples/resources/skill_installation/example_1.tf"}}
+
+Create and destroy wait for the bounded Hermes action status endpoint. Action
+log lines are never copied into Terraform/OpenTofu state or provider errors.
+Use `hermes_skill` separately when activation state must be managed.
+
+{{ .SchemaMarkdown | trimspace }}

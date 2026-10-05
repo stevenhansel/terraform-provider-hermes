@@ -1,0 +1,21 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# `hermes_toolset` Resource
+
+Manages the enabled state of one built-in Hermes toolset. Toolsets are toggles,
+not independently created remote objects.
+
+## Example Usage
+
+{{tffile "examples/resources/toolset/example_1.tf"}}
+
+Destroy disables the toolset. Enabling some toolsets can cause Hermes to start
+its own post-setup action; this provider does not silently execute or poll that
+action.
+
+{{ .SchemaMarkdown | trimspace }}

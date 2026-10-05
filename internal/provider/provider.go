@@ -18,8 +18,12 @@ import (
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/messaging"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/model"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/modeloptions"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/plugin"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/profile"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/skill"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/skillinstallation"
 	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/status"
+	"github.com/stevenhansel/terraform-provider-hermes/internal/provider/toolset"
 )
 
 const (
@@ -92,6 +96,10 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		messaging.NewResource,
 		cron.NewResource,
 		custom.NewResource,
+		plugin.NewResource,
+		skill.NewResource,
+		skillinstallation.NewResource,
+		toolset.NewResource,
 	}
 }
 

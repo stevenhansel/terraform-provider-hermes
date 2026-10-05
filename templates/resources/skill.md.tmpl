@@ -1,0 +1,21 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# `hermes_skill` Resource
+
+Manages activation state for an existing Hermes skill. It does not create or
+edit skill files.
+
+## Example Usage
+
+{{tffile "examples/resources/skill/example_1.tf"}}
+
+Hermes currently omits disabled skills from its inventory endpoint. Create or
+import a visible skill before managing a disabled desired state; destroy
+disables an existing skill and never deletes its files.
+
+{{ .SchemaMarkdown | trimspace }}
